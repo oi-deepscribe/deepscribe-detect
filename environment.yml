@@ -1,0 +1,25 @@
+name: odtk
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies: 
+  - python=3.7
+  - pytorch
+  - torchvision
+  - cudatoolkit=10.2
+  - numpy
+  - scipy
+  - matplotlib
+  - scikit-image
+  - scikit-learn
+  - pandas
+  - pillow
+  - black
+  - pylint
+  - pip
+  - nb_conda
+  - opencv
+  - tqdm
+  - pybind11
+  - cython

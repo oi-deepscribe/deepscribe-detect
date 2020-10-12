@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from . import backbones as backbones_mod
-from ._C import Engine
+# from ._C import Engine
 from .box import generate_anchors, snap_to_anchors, decode, nms
 from .box import generate_anchors_rotated, snap_to_anchors_rotated, nms_rotated
 from .loss import FocalLoss, SmoothL1Loss
@@ -242,41 +242,41 @@ class Model(nn.Module):
 
         return model, state
 
-    def export(self, size, batch, precision, calibration_files, calibration_table, verbose, onnx_only=False):
+    # def export(self, size, batch, precision, calibration_files, calibration_table, verbose, onnx_only=False):
 
-        import torch.onnx.symbolic_opset10 as onnx_symbolic
-        def upsample_nearest2d(g, input, output_size, *args):
-            # Currently, TRT 5.1/6.0/7.0 ONNX Parser does not support all ONNX ops
-            # needed to support dynamic upsampling ONNX forumlation
-            # Here we hardcode scale=2 as a temporary workaround
-            scales = g.op("Constant", value_t=torch.tensor([1., 1., 2., 2.]))
-            return g.op("Resize", input, scales, mode_s="nearest")
+    #     import torch.onnx.symbolic_opset10 as onnx_symbolic
+    #     def upsample_nearest2d(g, input, output_size, *args):
+    #         # Currently, TRT 5.1/6.0/7.0 ONNX Parser does not support all ONNX ops
+    #         # needed to support dynamic upsampling ONNX forumlation
+    #         # Here we hardcode scale=2 as a temporary workaround
+    #         scales = g.op("Constant", value_t=torch.tensor([1., 1., 2., 2.]))
+    #         return g.op("Resize", input, scales, mode_s="nearest")
 
-        onnx_symbolic.upsample_nearest2d = upsample_nearest2d
+    #     onnx_symbolic.upsample_nearest2d = upsample_nearest2d
 
-        # Export to ONNX
-        print('Exporting to ONNX...')
-        self.exporting = True
-        onnx_bytes = io.BytesIO()
-        zero_input = torch.zeros([1, 3, *size]).cuda()
-        extra_args = {'opset_version': 10, 'verbose': verbose}
-        torch.onnx.export(self.cuda(), zero_input, onnx_bytes, **extra_args)
-        self.exporting = False
+    #     # Export to ONNX
+    #     print('Exporting to ONNX...')
+    #     self.exporting = True
+    #     onnx_bytes = io.BytesIO()
+    #     zero_input = torch.zeros([1, 3, *size]).cuda()
+    #     extra_args = {'opset_version': 10, 'verbose': verbose}
+    #     torch.onnx.export(self.cuda(), zero_input, onnx_bytes, **extra_args)
+    #     self.exporting = False
 
-        if onnx_only:
-            return onnx_bytes.getvalue()
+    #     if onnx_only:
+    #         return onnx_bytes.getvalue()
 
-        # Build TensorRT engine
-        model_name = '_'.join([k for k, _ in self.backbones.items()])
-        anchors = []
-        if not self.rotated_bbox:
-            anchors = [generate_anchors(stride, self.ratios, self.scales, 
-                    self.angles).view(-1).tolist() for stride in self.strides]
-        else:
-            anchors = [generate_anchors_rotated(stride, self.ratios, self.scales, 
-                    self.angles)[0].view(-1).tolist() for stride in self.strides]
-        # Set batch_size = 1 batch/GPU for EXPLICIT_BATCH compatibility in TRT
-        batch = 1
-        return Engine(onnx_bytes.getvalue(), len(onnx_bytes.getvalue()), batch, precision,
-                      self.threshold, self.top_n, anchors, self.rotated_bbox, self.nms, self.detections, 
-                      calibration_files, model_name, calibration_table, verbose)
+    #     # Build TensorRT engine
+    #     model_name = '_'.join([k for k, _ in self.backbones.items()])
+    #     anchors = []
+    #     if not self.rotated_bbox:
+    #         anchors = [generate_anchors(stride, self.ratios, self.scales, 
+    #                 self.angles).view(-1).tolist() for stride in self.strides]
+    #     else:
+    #         anchors = [generate_anchors_rotated(stride, self.ratios, self.scales, 
+    #                 self.angles)[0].view(-1).tolist() for stride in self.strides]
+    #     # Set batch_size = 1 batch/GPU for EXPLICIT_BATCH compatibility in TRT
+    #     batch = 1
+    #     return Engine(onnx_bytes.getvalue(), len(onnx_bytes.getvalue()), batch, precision,
+    #                   self.threshold, self.top_n, anchors, self.rotated_bbox, self.nms, self.detections, 
+    #                   calibration_files, model_name, calibration_table, verbose)

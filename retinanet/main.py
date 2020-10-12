@@ -9,7 +9,7 @@ import torch.multiprocessing
 
 from retinanet import infer, train, utils
 from retinanet.model import Model
-from retinanet._C import Engine
+# from retinanet._C import Engine
 
 
 def parse(args):
@@ -182,7 +182,7 @@ def worker(rank, args, world, model, state):
     elif args.command == 'infer':
         if model is None:
             if rank == 0: print('Loading CUDA engine from {}...'.format(os.path.basename(args.model)))
-            model = Engine.load(args.model)
+            # model = Engine.load(args.model)
 
         infer.infer(model, args.images, args.output, args.resize, args.max_size, args.batch,
                     annotations=args.annotations, mixed_precision=not args.full_precision,
